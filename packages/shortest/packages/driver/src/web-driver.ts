@@ -1,8 +1,8 @@
 import { execSync } from "child_process";
 import { Browser, WebBrowser } from "@shortest/browser";
 import { getInstallationCommand } from "@shortest/util";
-import pc from "picocolors";
 import * as pw from "playwright";
+import { Logger } from "../../logger/src/logger-service";
 import { Driver } from "./driver";
 import {
   CoreDriverConfig,
@@ -14,6 +14,7 @@ export class WebDriver extends Driver<CoreDriverForPlatform[Platform.Web]> {
   private coreDriverConfig: CoreDriverConfig.Web | null = null;
   private driver: CoreDriverForPlatform.Web | null = null;
   private browsers: Map<string, Browser> = new Map();
+  private logger = Logger.getInstanse();
 
   constructor(coreDriverConfig?: CoreDriverConfig.Web) {
     super();
@@ -42,25 +43,25 @@ export class WebDriver extends Driver<CoreDriverForPlatform[Platform.Web]> {
     });
     const browser = new WebBrowser(context);
     this.browsers.set(browser.getId(), browser);
-    console.log(
-      pc.green(
-        `Browser session with ID "${browser.getId()}" created successfully.`
-      )
-    );
+    this.logger.log({
+      message: `Browser session with ID ${browser.getId()} created successfully.`,
+      level: "INFO",
+    });
     return browser;
   }
 
   async closeBrowser(id: string): Promise<void> {
     const browser = this.browsers.get(id);
     if (!browser) {
-      throw new Error(`Browser session with ID "${id}" not found.`);
+      throw new Error(`Browser session with ID ${id} not found.`);
     }
 
     await browser.destroy();
     this.browsers.delete(id);
-    console.log(
-      pc.green(`Browser session with ID "${id}" closed successfully.`)
-    );
+    this.logger.log({
+      message: `Browser session with ID ${id} closed successfully.`,
+      level: "INFO",
+    });
   }
 
   async destroy(): Promise<void> {
@@ -76,12 +77,18 @@ export class WebDriver extends Driver<CoreDriverForPlatform[Platform.Web]> {
   }
 
   private async installCoreDriver() {
-    console.log(pc.yellow("Installing Playwright browser..."));
+    this.logger.log({
+      message: "Installing Playwright browser...",
+      level: "INFO",
+    });
 
     const installationCommand = await getInstallationCommand();
 
     execSync(installationCommand, { stdio: "inherit" });
-    console.log(pc.green("✓ Playwright browser installed"));
+    this.logger.log({
+      message: "✓ Playwright browser installed",
+      level: "SUCCESS",
+    });
   }
 
   private async launchChromium() {

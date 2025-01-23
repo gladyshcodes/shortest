@@ -3,8 +3,10 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { WebBrowserDriver, WebPage } from "@shortest/driver";
 import { urlSafe } from "@shortest/util";
+import { Logger } from "../../logger/src/logger-service";
 import { Browser } from "./browser";
 import * as actions from "./deprecated_actions";
+import { BrowserError } from "./exceptions";
 import {
   BrowserActionOptions,
   BrowserActionResult,
@@ -17,6 +19,7 @@ export class WebBrowser extends Browser {
   private id: string;
   private driver: WebBrowserDriver | null = null;
   private state: DeepPartial<BrowserState>;
+  private logger = Logger.getInstanse();
 
   constructor(driver: WebBrowserDriver) {
     super();
@@ -40,8 +43,16 @@ export class WebBrowser extends Browser {
         payload: { element },
         metadata: { x, y },
       };
-    } catch {
-      throw new Error("Failed to locale.");
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to locale.", {
+        cause: errorIn,
+        context: {
+          x,
+          y,
+        },
+      });
+      this.logger.error(error);
+      throw error;
     }
   }
 
@@ -77,9 +88,16 @@ export class WebBrowser extends Browser {
           },
         },
       };
-    } catch (error) {
-      await page.close();
-      throw new Error(`Navigation failed: ${error}`);
+    } catch (errorIn: any) {
+      const error = new BrowserError("Navigation failed.", {
+        cause: errorIn,
+        context: {
+          url,
+          options,
+        },
+      });
+      this.logger.error(error);
+      throw error;
     }
   }
 
@@ -109,8 +127,12 @@ export class WebBrowser extends Browser {
           browserState: (await this.getState()).payload?.state,
         },
       };
-    } catch (error) {
-      throw new Error(`Screenshot failed: ${error}`);
+    } catch (errorIn: any) {
+      const error = new BrowserError("Screenshot failed.", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
+      throw error;
     }
   }
 
@@ -153,12 +175,12 @@ export class WebBrowser extends Browser {
           state,
         },
       };
-    } catch (error) {
-      console.error("Failed to get page title:", error);
-      return {
-        message: "Failed to retrieve state.",
-        payload: { state },
-      };
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to retrieve state.", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
+      throw error;
     }
   }
 
@@ -166,44 +188,57 @@ export class WebBrowser extends Browser {
     x: number,
     y: number
   ): Promise<BrowserActionResult<BrowserActions.Drag>> {
-    if (!x || !y) {
-      throw new Error("No coordinates provided.");
-    }
-    const page = this.getCurrentPage();
-    if (!page) {
-      throw new Error("No page found.");
-    }
+    try {
+      if (!x || !y) {
+        throw new Error("No coordinates provided.");
+      }
+      const page = this.getCurrentPage();
+      if (!page) {
+        throw new Error("No page found.");
+      }
 
-    await actions.dragMouse(page, x, y);
+      await actions.dragMouse(page, x, y);
 
-    return {
-      message: "Element dragged.",
-      payload: {},
-      metadata: {
-        x,
-        y,
-      },
-    };
+      return {
+        message: "Element dragged.",
+        payload: {},
+        metadata: {
+          x,
+          y,
+        },
+      };
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to drag.", {
+        cause: errorIn,
+        context: {
+          x,
+          y,
+        },
+      });
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async click(
     x: number | null,
     y: number | null
   ): Promise<BrowserActionResult<BrowserActions.Click>> {
-    const page = this.getCurrentPage();
-    if (!page) {
-      throw new Error("No page found.");
-    }
-
-    if (!x || !y) {
-      x = this.state?.cursor?.position?.x ?? 0;
-      y = this.state?.cursor?.position?.y ?? 0;
-      console.warn(
-        `No coordinates provided. Using last remembered cursor position ${x} ${y}`
-      );
-    }
-
     try {
+      const page = this.getCurrentPage();
+      if (!page) {
+        throw new Error("No page found.");
+      }
+
+      if (!x || !y) {
+        x = this.state?.cursor?.position?.x ?? 0;
+        y = this.state?.cursor?.position?.y ?? 0;
+        this.logger.log({
+          message: `No coordinates provided. Using last remembered cursor position ${x} ${y}`,
+          level: "WARN",
+        });
+      }
+
       await actions.click(page, x, y);
       const newPage = this.getCurrentPage();
       if (!newPage) {
@@ -220,112 +255,152 @@ export class WebBrowser extends Browser {
         message: `Mouse clicked at (${x}, ${y})`,
         metadata,
       };
-    } catch (error) {
-      console.log({ error });
-      throw new Error(`Failed to click: ${error}`);
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to click:", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
+      throw error;
     }
   }
 
   async pressKey(
     keys: string[]
   ): Promise<BrowserActionResult<BrowserActions.PressKey>> {
-    if (!keys.length) {
-      throw new Error("Key required for pressKey action");
-    }
-    const singleKey = keys.length === 1;
+    try {
+      if (!keys.length) {
+        throw new Error("Key required for pressKey action");
+      }
+      const singleKey = keys.length === 1;
 
-    const page = this.getCurrentPage();
-    if (!page) {
-      throw new Error("No page found.");
-    }
-    await page.waitForTimeout(100);
+      const page = this.getCurrentPage();
+      if (!page) {
+        throw new Error("No page found.");
+      }
+      await page.waitForTimeout(100);
 
-    if (singleKey) {
-      await page.keyboard.press(keys[0]);
-    } else {
-      await page.keyboard.down(keys[0]);
-      await page.keyboard.press(keys[1]);
-      await page.keyboard.up(keys[0]);
-    }
+      if (singleKey) {
+        await page.keyboard.press(keys[0]);
+      } else {
+        await page.keyboard.down(keys[0]);
+        await page.keyboard.press(keys[1]);
+        await page.keyboard.up(keys[0]);
+      }
 
-    await page.waitForTimeout(100);
-    return {
-      message: `Pressed key: ${keys.join("+")}`,
-    };
+      await page.waitForTimeout(100);
+      return {
+        message: `Pressed key: ${keys.join("+")}`,
+      };
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to press key.", {
+        cause: errorIn,
+        context: { keys },
+      });
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async moveCursor(
     x: number,
     y: number
   ): Promise<BrowserActionResult<BrowserActions.MoveCursor>> {
-    const page = this.getCurrentPage();
-    if (!page) {
-      throw new Error("No page found.");
-    }
-    if (!x || !y) {
-      throw new Error("Coordinates required for mouse_move");
-    }
-    await actions.mouseMove(page, x, y);
-    this.state = {
-      ...this.state,
-      cursor: {
-        position: {
-          x,
-          y,
+    try {
+      const page = this.getCurrentPage();
+      if (!page) {
+        throw new Error("No page found.");
+      }
+      if (!x || !y) {
+        throw new Error("Coordinates required for mouse_move");
+      }
+      await actions.mouseMove(page, x, y);
+      this.state = {
+        ...this.state,
+        cursor: {
+          position: {
+            x,
+            y,
+          },
         },
-      },
-    };
-    return {
-      message: `Cursor moved to ${x} ${y}.`,
-    };
+      };
+      return {
+        message: `Cursor moved to ${x} ${y}.`,
+      };
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to move cursor.", {
+        cause: errorIn,
+        context: { x, y },
+      });
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async type(text: string): Promise<BrowserActionResult<BrowserActions.Type>> {
-    if (!text) {
-      throw new Error("Text required for type action");
-    }
+    try {
+      if (!text) {
+        throw new Error("Text required for type action");
+      }
 
-    const page = this.getCurrentPage();
-    if (!page) {
-      throw new Error("No page found.");
-    }
-    await page.waitForTimeout(100);
-    await page.keyboard.type(text);
-    await page.waitForTimeout(100);
+      const page = this.getCurrentPage();
+      if (!page) {
+        throw new Error("No page found.");
+      }
+      await page.waitForTimeout(100);
+      await page.keyboard.type(text);
+      await page.waitForTimeout(100);
 
-    return {
-      message: `Typed: ${text}`,
-    };
+      return {
+        message: `Typed: ${text}`,
+      };
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to move cursor.", {
+        cause: errorIn,
+        context: { text },
+      });
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async sleep(
     ms: number | null
   ): Promise<BrowserActionResult<BrowserActions.Sleep>> {
-    const DEFAULT_SLEEP_DURATION_MS = 1000;
-    const DEFAULT_SLEEP_MAX_DURATION_MS = 60000;
+    try {
+      const DEFAULT_SLEEP_DURATION_MS = 1000;
+      const DEFAULT_SLEEP_MAX_DURATION_MS = 60000;
 
-    let duration = ms ?? DEFAULT_SLEEP_DURATION_MS;
+      let duration = ms ?? DEFAULT_SLEEP_DURATION_MS;
 
-    if (duration > DEFAULT_SLEEP_MAX_DURATION_MS) {
-      console.warn(
-        `Requested sleep duration ${duration}ms exceeds maximum of ${DEFAULT_SLEEP_MAX_DURATION_MS}ms. Using maximum.`
-      );
-      duration = DEFAULT_SLEEP_MAX_DURATION_MS;
+      if (duration > DEFAULT_SLEEP_MAX_DURATION_MS) {
+        this.logger.log({
+          message: `Requested sleep duration ${duration}ms exceeds maximum of ${DEFAULT_SLEEP_MAX_DURATION_MS}ms. Using maximum.`,
+          level: "WARN",
+        });
+        duration = DEFAULT_SLEEP_MAX_DURATION_MS;
+      }
+
+      const seconds = Math.round(duration / 1000);
+      this.logger.log({
+        message: `⏳ Waiting for ${seconds} second${seconds !== 1 ? "s" : ""}...`,
+        level: "INFO",
+      });
+
+      const page = this.getCurrentPage();
+      if (!page) {
+        throw new Error("No page found.");
+      }
+      await page.waitForTimeout(duration);
+      return {
+        message: `Slept for ${seconds} second${seconds !== 1 ? "s" : ""}.`,
+      };
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to sleep.", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
+      throw error;
     }
-
-    const seconds = Math.round(duration / 1000);
-    console.log(
-      `⏳ Waiting for ${seconds} second${seconds !== 1 ? "s" : ""}...`
-    );
-
-    const page = this.getCurrentPage();
-    if (!page) {
-      throw new Error("No page found.");
-    }
-    await page.waitForTimeout(duration);
-    return {
-      message: `Slept for ${seconds} second${seconds !== 1 ? "s" : ""}.`,
-    };
   }
 
   /**
@@ -334,54 +409,70 @@ export class WebBrowser extends Browser {
    * and closes any remaining open pages to ensure a clean state.
    */
   async cleanup(): Promise<BrowserActionResult<BrowserActions.Cleanup>> {
-    await Promise.all([
-      this.getDriver().clearCookies(),
-      this.getDriver()
-        .pages()
-        .map((page) =>
-          page.evaluate(() => {
-            localStorage.clear();
-            sessionStorage.clear();
-            indexedDB.deleteDatabase("shortest");
-          })
-        ),
-      this.getDriver().clearPermissions(),
-    ]);
+    try {
+      await Promise.all([
+        this.getDriver().clearCookies(),
+        this.getDriver()
+          .pages()
+          .map((page) =>
+            page.evaluate(() => {
+              localStorage.clear();
+              sessionStorage.clear();
+              indexedDB.deleteDatabase("shortest");
+            })
+          ),
+        this.getDriver().clearPermissions(),
+      ]);
 
-    await Promise.all(
-      this.getDriver()
-        .pages()
-        .map((page) => page.goto("about:blank"))
-    );
+      await Promise.all(
+        this.getDriver()
+          .pages()
+          .map((page) => page.goto("about:blank"))
+      );
 
-    const pages = this.getDriver().pages();
-    if (pages.length > 1) {
-      await Promise.all(pages.slice(1).map((page) => page.close()));
+      const pages = this.getDriver().pages();
+      if (pages.length > 1) {
+        await Promise.all(pages.slice(1).map((page) => page.close()));
+      }
+
+      return {
+        message: "Successfully cleanup current Browser",
+      };
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to cleanup.", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
+      throw error;
     }
-
-    return {
-      message: "Successfully cleanup current Browser",
-    };
   }
 
   async runAutomation(
     automation: BrowserAutomation,
     options: BrowserActionOptions.Automation
   ): Promise<BrowserActionResult<BrowserActions.Automation>> {
-    const automationName = automation.constructor.name;
-    const result = await automation.execute(this, options);
+    try {
+      const automationName = automation.constructor.name;
+      const result = await automation.execute(this, options);
 
-    return {
-      message: result.success
-        ? `${automationName} automation was successfully completed`
-        : `${automationName} automation failed: ${result.reason || "unknown error"}`,
-      payload: {
-        reason: result.reason,
-      },
-      metadata: {
-        browserState: (await this.getState()).payload?.state,
-      },
-    };
+      return {
+        message: result.success
+          ? `${automationName} automation was successfully completed`
+          : `${automationName} automation failed: ${result.reason || "unknown error"}`,
+        payload: {
+          reason: result.reason,
+        },
+        metadata: {
+          browserState: (await this.getState()).payload?.state,
+        },
+      };
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to run automation.", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async runCallback(): Promise<BrowserActionResult<BrowserActions.Callback>> {
@@ -392,16 +483,28 @@ export class WebBrowser extends Browser {
     try {
       await this.getDriver().close();
       this.driver = null;
-    } catch (error) {
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to destroy browser.", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
       throw error;
     }
   }
 
   public getDriver(): WebBrowserDriver {
-    if (!this.driver) {
-      throw new Error("Driver not initialized.");
+    try {
+      if (!this.driver) {
+        throw new Error("Driver not initialized.");
+      }
+      return this.driver;
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to get driver.", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
+      throw error;
     }
-    return this.driver;
   }
 
   /**
@@ -409,8 +512,16 @@ export class WebBrowser extends Browser {
    * @returns The current page or null if no page is found.
    */
   getCurrentPage(): WebPage | null {
-    const pages = this.getDriver().pages();
-    return pages.length > 0 ? pages[pages.length - 1] : null;
+    try {
+      const pages = this.getDriver().pages();
+      return pages.length > 0 ? pages[pages.length - 1] : null;
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to get current page.", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   /**
@@ -420,93 +531,108 @@ export class WebBrowser extends Browser {
    * @see https://github.com/microsoft/playwright/issues/13273
    */
   async getNormalizedComponentStringByCoords(x: number, y: number) {
-    const page = this.getCurrentPage();
-    if (!page) {
-      throw new Error("No page found");
-    }
+    try {
+      const page = this.getCurrentPage();
+      if (!page) {
+        throw new Error("No page found");
+      }
 
-    return await page.evaluate(
-      ({ x, y, allowedAttr }) => {
-        const elem = document.elementFromPoint(x, y);
-        if (elem) {
-          // todo: test func below
-          const clone = elem.cloneNode(true) as HTMLElement;
+      return await page.evaluate(
+        ({ x, y, allowedAttr }) => {
+          const elem = document.elementFromPoint(x, y);
+          if (elem) {
+            // todo: test func below
+            const clone = elem.cloneNode(true) as HTMLElement;
 
-          /**
-           * Gets deepest nested child node
-           * If several nodes are on the same depth, the first node would be returned
-           */
-          function getDeepestChildNode(element: Element): HTMLElement {
-            let deepestChild = element.cloneNode(true) as HTMLElement;
-            let maxDepth = 0;
+            /**
+             * Gets deepest nested child node
+             * If several nodes are on the same depth, the first node would be returned
+             */
+            function getDeepestChildNode(element: Element): HTMLElement {
+              let deepestChild = element.cloneNode(true) as HTMLElement;
+              let maxDepth = 0;
 
-            function traverse(node: any, depth: number) {
-              if (depth > maxDepth) {
-                maxDepth = depth;
-                deepestChild = node;
+              function traverse(node: any, depth: number) {
+                if (depth > maxDepth) {
+                  maxDepth = depth;
+                  deepestChild = node;
+                }
+
+                Array.from(node.children).forEach((child) => {
+                  traverse(child, depth + 1);
+                });
               }
 
-              Array.from(node.children).forEach((child) => {
-                traverse(child, depth + 1);
+              traverse(deepestChild, 0);
+              return deepestChild;
+            }
+
+            const deepestNode = getDeepestChildNode(clone);
+
+            // get several parents if present
+            const node = deepestNode.parentElement
+              ? deepestNode.parentElement.parentElement
+                ? deepestNode.parentElement.parentElement
+                : deepestNode.parentElement
+              : deepestNode;
+
+            /**
+             * Recursively delete attributes from Nodes
+             */
+            function cleanAttributesRecursively(
+              element: Element,
+              options: { exceptions: string[] }
+            ) {
+              Array.from(element.attributes).forEach((attr) => {
+                if (!options.exceptions.includes(attr.name)) {
+                  element.removeAttribute(attr.name);
+                }
+              });
+
+              Array.from(element.children).forEach((child) => {
+                cleanAttributesRecursively(child, options);
               });
             }
 
-            traverse(deepestChild, 0);
-            return deepestChild;
-          }
-
-          const deepestNode = getDeepestChildNode(clone);
-
-          // get several parents if present
-          const node = deepestNode.parentElement
-            ? deepestNode.parentElement.parentElement
-              ? deepestNode.parentElement.parentElement
-              : deepestNode.parentElement
-            : deepestNode;
-
-          /**
-           * Recursively delete attributes from Nodes
-           */
-          function cleanAttributesRecursively(
-            element: Element,
-            options: { exceptions: string[] }
-          ) {
-            Array.from(element.attributes).forEach((attr) => {
-              if (!options.exceptions.includes(attr.name)) {
-                element.removeAttribute(attr.name);
-              }
+            cleanAttributesRecursively(node, {
+              exceptions: allowedAttr,
             });
 
-            Array.from(element.children).forEach((child) => {
-              cleanAttributesRecursively(child, options);
-            });
+            // trim and remove white spaces
+            return node.outerHTML.trim().replace(/\s+/g, " ");
+          } else {
+            return "";
           }
-
-          cleanAttributesRecursively(node, {
-            exceptions: allowedAttr,
-          });
-
-          // trim and remove white spaces
-          return node.outerHTML.trim().replace(/\s+/g, " ");
-        } else {
-          return "";
+        },
+        {
+          x,
+          y,
+          allowedAttr: [
+            "type",
+            "name",
+            "placeholder",
+            "aria-label",
+            "role",
+            "title",
+            "alt",
+            "d", // for <path> tags
+          ],
         }
-      },
-      {
-        x,
-        y,
-        allowedAttr: [
-          "type",
-          "name",
-          "placeholder",
-          "aria-label",
-          "role",
-          "title",
-          "alt",
-          "d", // for <path> tags
-        ],
-      }
-    );
+      );
+    } catch (errorIn: any) {
+      const error = new BrowserError(
+        "Failed to get normalized component string by coords.",
+        {
+          cause: errorIn,
+          context: {
+            x,
+            y,
+          },
+        }
+      );
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   /**
@@ -544,8 +670,11 @@ export class WebBrowser extends Browser {
           });
         });
       });
-    } catch (error) {
-      console.log("Failed to wait for stable DOM:", error);
+    } catch (errorIn: any) {
+      const error = new BrowserError("Failed to wait for stable DOM.", {
+        cause: errorIn,
+      });
+      this.logger.error(error);
       throw error;
     }
   }
@@ -581,8 +710,14 @@ export class WebBrowser extends Browser {
         page.waitForSelector("body"),
         timeoutPromise,
       ]);
-    } catch (error) {
-      console.error("Failed to wait for DOM Content Loaded:", error);
+    } catch (errorIn: any) {
+      const error = new BrowserError(
+        "Failed to wait for DOM content to load.",
+        {
+          cause: errorIn,
+        }
+      );
+      this.logger.error(error);
       throw error;
     } finally {
       clearTimeout(timeoutHandle!);
@@ -601,10 +736,13 @@ export class WebBrowser extends Browser {
           await actions.initializeCursor(page);
           break;
         } catch (error) {
-          console.warn(
-            `Retry ${i + 1}/3: Cursor initialization failed:`,
-            error
-          );
+          this.logger.log({
+            message: `Retry ${i + 1}/3: Cursor initialization failed, retrying...:`,
+            level: "WARN",
+            context: {
+              error,
+            },
+          });
           await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }

@@ -12,13 +12,14 @@ import { Browser } from "@shortest/browser";
 import { CacheAction, CacheStep } from "@shortest/cache";
 import { Platform } from "@shortest/driver";
 import { sleep } from "@shortest/util";
-import pc from "picocolors";
+import { Logger } from "packages/logger/src/logger-service";
 
 export class AIClient {
   private client: Anthropic;
   private model: string;
   private maxMessages: number;
   private debugMode: boolean;
+  private logger = Logger.getInstanse();
 
   constructor(debugMode: boolean = false) {
     if (!__shortest__.config!.anthropicKey) {
@@ -58,7 +59,10 @@ export class AIClient {
         attempts++;
         if (attempts === maxRetries) throw error;
 
-        console.log(`Retry attempt ${attempts}/${maxRetries}`);
+        this.logger.log({
+          message: `Retry attempt ${attempts}/${maxRetries}`,
+          level: "INFO",
+        });
         await new Promise((r) => setTimeout(r, 5000 * attempts));
       }
     }
@@ -77,10 +81,10 @@ export class AIClient {
     // temp cache store
     const pendingCache: Partial<{ steps?: CacheStep[] }> = {};
 
-    // Log the conversation
-    if (this.debugMode) {
-      console.log(pc.cyan("\n🤖 Prompt:"), pc.dim(prompt));
-    }
+    this.logger.log({
+      message: `\n🤖 Prompt: ${prompt}`,
+      level: "INFO",
+    });
 
     messages.push({
       role: "user",
@@ -111,13 +115,19 @@ export class AIClient {
         if (this.debugMode) {
           response.content.forEach((block) => {
             if (block.type === "text") {
-              console.log(pc.green("\n🤖 AI:"), pc.dim((block as any).text));
+              this.logger.log({
+                message: `\n 🤖 AI: ${block.text}`,
+                level: "INFO",
+              });
             } else if (block.type === "tool_use") {
               const toolBlock =
                 block as Anthropic.Beta.Messages.BetaToolUseBlock;
-              console.log(pc.yellow("\n🔧 Tool Request:"), {
-                tool: toolBlock.name,
-                input: toolBlock.input,
+              this.logger.log({
+                message: `\n Tool Request: ${{
+                  tool: toolBlock.name,
+                  input: toolBlock.input,
+                }}`,
+                level: "INFO",
               });
             }
           });
@@ -185,13 +195,13 @@ export class AIClient {
           if (this.debugMode) {
             results.forEach((result: any) => {
               const { ...logResult } = result;
-              console.log(pc.blue("\n🔧 Tool Result:"), logResult);
+
+              this.logger.log({
+                message: `Tool Result: ${logResult}`,
+                level: "INFO",
+              });
             });
           }
-
-          console.log({
-            pl: JSON.stringify(__shortest__.config!.driver.platform),
-          });
 
           // Add tool results to message history
           messages.push({
@@ -230,7 +240,10 @@ export class AIClient {
         }
       } catch (error: any) {
         if (error.message?.includes("rate_limit")) {
-          console.log("⏳ Rate limited, waiting 60s...");
+          this.logger.log({
+            message: `Rate limited, waiting 60s...`,
+            level: "INFO",
+          });
           await sleep(60000);
           continue;
         }

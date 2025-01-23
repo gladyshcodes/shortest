@@ -1,0 +1,9 @@
+{
+  "name": "@shortest/logger",
+  "version": "0.1.0",
+  "description": "Internal logger module for the Shortest framework",
+  "type": "module",
+  "main": "./src/index.ts",
+  "author": "Antiwork",
+  "license": "MIT"
+}

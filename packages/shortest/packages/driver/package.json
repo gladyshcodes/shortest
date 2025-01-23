@@ -10,7 +10,8 @@
     "@wdio/types": "^8.0.0",
     "@wdio/logger": "^9.0.0",
     "@shortest/browser": "workspace:*",
-    "@shortest/util": "workspace:*"
+    "@shortest/util": "workspace:*",
+    "@shortest/logger": "workspace:*"
   },
   "author": "Antiwork",
   "license": "MIT"

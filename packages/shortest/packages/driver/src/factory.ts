@@ -1,4 +1,5 @@
-import pc from "picocolors";
+import { RuntimeError } from "packages/browser/src";
+import { Logger } from "packages/logger/src/logger-service";
 import { Driver } from "./driver";
 import { CoreDriverForPlatform, DriverConfig } from "./interfaces";
 import { UIAutomator2Driver } from "./uiautomator2-driver";
@@ -12,28 +13,43 @@ export class DriverFactory {
   }: DriverConfig): Promise<
     Driver<CoreDriverForPlatform.Web | CoreDriverForPlatform.Mobile>
   > {
-    console.log(pc.blue(`Initializing driver for ${platform} platform`));
+    const logger = Logger.getInstanse();
+    logger.log({
+      message: `Initializing driver for ${platform} platform`,
+      level: "INFO",
+    });
     try {
       switch (platform) {
         case "web":
           const webDriver = new WebDriver(coreDriver);
-          console.log(pc.blue(`Driver initialized`));
+          logger.log({
+            message: `Driver initialized`,
+            level: "SUCCESS",
+          });
           return webDriver;
         case "android":
           const androidDriver = new UIAutomator2Driver(coreDriver);
           await androidDriver.init();
-          console.log(pc.blue(`Driver initialized`));
+          logger.log({
+            message: `Driver initialized`,
+            level: "SUCCESS",
+          });
           return androidDriver;
         case "ios":
           const IOSDriver = new XCUITestDriver(coreDriver);
-          console.log(pc.blue(`Driver initialized`));
+          logger.log({
+            message: `Driver initialized`,
+            level: "SUCCESS",
+          });
           return IOSDriver;
         default:
           throw new Error(`Unsupported platform: ${platform}`);
       }
-    } catch (error) {
-      console.log({ error });
-      console.error("Driver initialization failed.");
+    } catch (errorIn: any) {
+      const error = new RuntimeError("Driver initialization failed.", {
+        cause: errorIn,
+      });
+      logger.error(error);
       throw error;
     }
   }
