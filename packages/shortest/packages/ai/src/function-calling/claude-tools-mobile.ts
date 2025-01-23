@@ -1,48 +1,17 @@
-export const ClaudeToolsMobile = [
-  {
-    type: "computer_20241022",
-    name: "computer",
-    display_width_px: 1920,
-    display_height_px: 1080,
-    display_number: 1,
-  },
-  {
-    name: "sleep",
-    description: "Pause test execution for specified duration",
-    input_schema: {
-      type: "object",
-      properties: {
-        action: {
-          type: "string",
-          enum: ["sleep"],
-          description: "The action to perform",
-        },
-        duration: {
-          type: "number",
-          description:
-            "Duration to sleep in milliseconds (e.g. 5000 for 5 seconds)",
-          minimum: 0,
-          maximum: 60000,
-        },
-      },
-      required: ["action", "duration"],
-    },
-  },
-  {
-    name: "run_callback",
-    description: "Run callback function for current test step",
-    input_schema: {
-      type: "object",
-      properties: {
-        action: {
-          type: "string",
-          enum: ["run_callback"],
-          description: "Execute callback for current step",
-        },
-      },
-      required: ["action"],
-    },
-  },
-] as const;
+import { BetaToolUnion } from "@anthropic-ai/sdk/resources/beta/messages/messages";
+import { getComputerUse, getSleep, getRunCallback } from "./tools";
 
-export type ClaudeMobileTool = (typeof ClaudeToolsMobile)[number]["name"];
+interface ClaudeToolsMobileArgs {
+  display_width_px: number;
+  display_height_px: number;
+}
+
+export const getClaudeToolsMobile = ({
+  display_width_px,
+  display_height_px,
+}: ClaudeToolsMobileArgs) =>
+  [
+    getComputerUse(display_width_px, display_height_px),
+    getSleep(),
+    getRunCallback(),
+  ] as BetaToolUnion[];
