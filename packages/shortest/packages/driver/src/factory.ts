@@ -4,6 +4,7 @@ import { CoreDriverForPlatform, DriverConfig } from "./interfaces";
 import { UIAutomator2Driver } from "./uiautomator2-driver";
 import { WebDriver } from "./web-driver";
 import { XCUITestDriver } from "./xcuitest-driver";
+import setupAppiumEnv from "./setup-appium-env";
 
 export class DriverFactory {
   static async getInstance({
@@ -13,6 +14,8 @@ export class DriverFactory {
     Driver<CoreDriverForPlatform.Web | CoreDriverForPlatform.Mobile>
   > {
     console.log(pc.blue(`Initializing driver for ${platform} platform`));
+
+    console.log({ platform });
     try {
       switch (platform) {
         case "web":
@@ -21,11 +24,14 @@ export class DriverFactory {
           return webDriver;
         case "android":
           const androidDriver = new UIAutomator2Driver(coreDriver);
+          await setupAppiumEnv(platform);
           await androidDriver.init();
           console.log(pc.blue(`Driver initialized`));
           return androidDriver;
         case "ios":
           const IOSDriver = new XCUITestDriver(coreDriver);
+          await setupAppiumEnv(platform);
+          await IOSDriver.init();
           console.log(pc.blue(`Driver initialized`));
           return IOSDriver;
         default:
