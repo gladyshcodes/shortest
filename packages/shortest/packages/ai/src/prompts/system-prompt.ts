@@ -1,20 +1,9 @@
+import { getExampleTestCase } from "./example-test-case";
+
 export const getGenericSystemPrompt = () => `
-YOUR TASK IS TO:
-   1. Execute browser actions to validate test cases
-   2. Use provided browser tools to interact with the page
-   3. Return test execution results in strict JSON format: { result: "pass" | "fail", reason: string }
-   For failures, provide a maximum 1-sentence reason.
-   4. For click actions, provide x,y coordinates of the element to click.
+  ${getExampleTestCase()}
 
-EXAMPLE TEST CASE:
-   ------------------
-   Test: "Login to the app using Github login"
-   Context: {"username":"argo.mohrad@gmail.com","password":"password1234"}
-   Callback function: [NO_CALLBACK]
-   Expect: 1. Test case to be generated within at least 20 seconds [HAS_CALLBACK]
-   ------------------
-
-IMPORTANT GLOBAL RULES:
+  IMPORTANT GLOBAL RULES:
   **Waiting for Conditions**:
    - Always wait for the tool to finish before proceeding to the next action. You will recieve a message to continue with your next action once the wait is over. Then validate the condition is met.
 
