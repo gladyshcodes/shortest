@@ -3,14 +3,14 @@ import {
   ClaudeAdapter,
   ClaudeResponse,
   ClaudeResponseMouseMove,
-  ClaudeToolsMobile,
-  ClaudeToolsWeb,
+  getClaudeToolsMobile,
+  getClaudeToolsWeb,
   getSystemPromptForMobilePlatform,
   getSystemPromptForWebPlatform,
 } from "@shortest/ai";
 import { Browser } from "@shortest/browser";
 import { CacheAction, CacheStep } from "@shortest/cache";
-import { Platform } from "@shortest/driver";
+import { Platform, PLAYWRIGHT_CONTEXT_DEFAULT_CONFIG } from "@shortest/driver";
 import { sleep } from "@shortest/util";
 import pc from "picocolors";
 
@@ -87,6 +87,8 @@ export class AIClient {
       content: prompt,
     });
 
+    console.log("my platform is", platform);
+
     const adapter = new ClaudeAdapter(browser);
 
     while (true) {
@@ -103,7 +105,18 @@ export class AIClient {
               : getSystemPromptForMobilePlatform(),
           betas: ["computer-use-2024-10-22"],
           tools: [
-            ...(platform === Platform.Web ? ClaudeToolsWeb : ClaudeToolsMobile),
+            ...(platform === Platform.Web
+              ? getClaudeToolsWeb({
+                  display_width_px:
+                    PLAYWRIGHT_CONTEXT_DEFAULT_CONFIG.viewport.width,
+                  display_height_px:
+                    PLAYWRIGHT_CONTEXT_DEFAULT_CONFIG.viewport.height,
+                })
+              : // TODO: write a function to get values dynamically
+                getClaudeToolsMobile({
+                  display_width_px: 1080,
+                  display_height_px: 2400,
+                })),
           ],
         });
 
@@ -188,10 +201,6 @@ export class AIClient {
               console.log(pc.blue("\n🔧 Tool Result:"), logResult);
             });
           }
-
-          console.log({
-            pl: JSON.stringify(__shortest__.config!.driver.platform),
-          });
 
           // Add tool results to message history
           messages.push({

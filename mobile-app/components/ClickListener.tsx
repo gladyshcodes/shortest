@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from "react";
-import { StyleSheet, GestureResponderEvent, View } from "react-native";
+import { StyleSheet, GestureResponderEvent, View, Text } from "react-native";
 
 interface ScreenClick {
   id: number;
@@ -37,7 +37,7 @@ export default function ClickListener({
 
     setClicks((prevClicks) => {
       const newClicks = [...prevClicks, { id: Date.now(), x: pos.x, y: pos.y }];
-      if (newClicks.length > 3) {
+      if (newClicks.length > 1) {
         newClicks.shift();
       }
       return newClicks;
@@ -72,7 +72,11 @@ function ClickIndicator({ x, y }: ClickIndicatorProps): JSX.Element {
           top: y - 10,
         },
       ]}
-    />
+    >
+      <Text style={styles.text}>
+        X: {Math.floor(x * 2.625)}, Y: {Math.floor(y * 2.625)}
+      </Text>
+    </View>
   );
 }
 
@@ -82,10 +86,14 @@ const styles = StyleSheet.create({
   },
   indicator: {
     position: "absolute",
-    width: 20,
-    height: 20,
+    width: 50,
+    height: 50,
     backgroundColor: "green",
-    borderRadius: 10,
+    borderRadius: 20,
     zIndex: 1000,
+  },
+  text: {
+    color: "white",
+    fontSize: 15,
   },
 });

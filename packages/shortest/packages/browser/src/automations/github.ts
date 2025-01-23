@@ -25,23 +25,23 @@ export class GitHubTool implements BrowserAutomation {
 
     this.totpSecret = secret || process.env.GITHUB_TOTP_SECRET || "";
 
-    if (!this.totpSecret) {
-      throw new Error(
-        "GITHUB_TOTP_SECRET is required in .env file or via --secret flag"
-      );
-    }
+    // if (!this.totpSecret) {
+    //   throw new Error(
+    //     "GITHUB_TOTP_SECRET is required in .env file or via --secret flag"
+    //   );
+    // }
   }
 
-  private validateSecret() {
-    if (!this.totpSecret) {
-      throw new Error(
-        "GITHUB_TOTP_SECRET is required in .env file or via --secret flag"
-      );
-    }
-  }
+  // private validateSecret() {
+  //   if (!this.totpSecret) {
+  //     throw new Error(
+  //       "GITHUB_TOTP_SECRET is required in .env file or via --secret flag"
+  //     );
+  //   }
+  // }
 
   generateTOTPCode(): { code: string; timeRemaining: number } {
-    this.validateSecret();
+    // this.validateSecret();
     try {
       const code = authenticator.generate(this.totpSecret);
       const timeRemaining = authenticator.timeRemaining();

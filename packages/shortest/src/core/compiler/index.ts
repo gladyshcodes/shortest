@@ -1,6 +1,6 @@
-import { mkdirSync, existsSync, writeFileSync } from "fs";
-import { tmpdir } from "os";
-import { join, resolve } from "path";
+import { mkdirSync, existsSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { build, BuildOptions, Plugin } from "esbuild";
 
 export class TestCompiler {
@@ -30,9 +30,9 @@ export class TestCompiler {
 
     // todo: consider use this instead of banner
     // https://github.com/evanw/esbuild/issues/1921#issuecomment-1898197331
-    inject: [
-      resolve(process.cwd(), "packages/shortest/src/core/compiler/cjs-shim.ts"),
-    ],
+    // inject: [
+    //   resolve("./cjs-shim.ts"),
+    // ],
     // banner: {
     //   js: `import { createRequire } from "module";
 

@@ -8,6 +8,10 @@
  * @see {@link Browser} for the Browser interface definition.
  */
 
+// TODO: Currently, this file also handles the validation of Claude responses.
+// Once we implement dedicated validation for Claude responses,
+// this logic should be moved elsewhere to maintain the single responsibility principle.
+
 import {
   Browser,
   BrowserActionOptions,
@@ -119,12 +123,9 @@ export class ClaudeAdapter {
     // const AI_Y_MULTIPLIER = 0.37;
     // if (x && y) {
     //   x = x * 3.5;
-    //   y = y * 3.5;
+    //   y = y * 3.5;x`
     // }
-    return await this.browser.click(
-      Math.round(x! + 200 * 2.625),
-      Math.round(y! + 200 * 2.625)
-    );
+    return await this.browser.click(Math.round(x!), Math.round(y!));
   }
 
   private async handleLeftClickDrag(

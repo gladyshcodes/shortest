@@ -62,7 +62,7 @@ export abstract class Browser {
    */
   abstract navigate(
     url: string,
-    options: BrowserActionOptions.Navigate
+    options?: BrowserActionOptions.Navigate
   ): Promise<BrowserActionResult<BrowserActions.Navigate>>;
 
   /**
@@ -87,7 +87,7 @@ export abstract class Browser {
   abstract runCallback(): Promise<BrowserActionResult<BrowserActions.Callback>>;
 
   abstract getDriver(): WebBrowserDriver | MobileBrowserDriver;
-  abstract getCurrentPage(): WebPage | null; // todo: add mobile as well
+  abstract getCurrentPage(): WebPage | null; // TODO: add mobile as well
   abstract cleanup(): Promise<BrowserActionResult<BrowserActions.Cleanup>>;
   abstract destroy(): Promise<void>;
 }

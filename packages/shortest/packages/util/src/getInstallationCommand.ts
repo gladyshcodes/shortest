@@ -1,3 +1,4 @@
+// TODO this util is not reused, consider inlining its
 import { detect, resolveCommand } from "package-manager-detector";
 
 export const getInstallationCommand = async () => {
@@ -15,7 +16,7 @@ export const getInstallationCommand = async () => {
 
   if (!command) {
     throw new Error(
-      "Failed to resolve playwright browser installation command",
+      "Failed to resolve playwright browser installation command"
     );
   }
 

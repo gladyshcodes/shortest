@@ -37,9 +37,9 @@ export class WebDriver extends Driver<CoreDriverForPlatform[Platform.Web]> {
   }
 
   async createBrowser(): Promise<Browser> {
-    const context = await this.getDriver().newContext({
-      viewport: { width: 1920, height: 1080 },
-    });
+    const context = await this.getDriver().newContext(
+      PLAYWRIGHT_CONTEXT_DEFAULT_CONFIG
+    );
     const browser = new WebBrowser(context);
     this.browsers.set(browser.getId(), browser);
     console.log(
@@ -91,3 +91,7 @@ export class WebDriver extends Driver<CoreDriverForPlatform[Platform.Web]> {
     });
   }
 }
+
+export const PLAYWRIGHT_CONTEXT_DEFAULT_CONFIG = {
+  viewport: { width: 1920, height: 1080 },
+};

@@ -101,7 +101,7 @@ export async function initialize() {
           let driver;
           try {
             driver = await DriverFactory.getInstance({
-              platform,
+              platform: config.driver.platform,
               coreDriver: config.driver.coreDriver,
             });
           } catch (error) {

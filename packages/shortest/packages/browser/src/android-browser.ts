@@ -10,6 +10,7 @@ import {
   BrowserActions,
   BrowserState,
 } from "./interfaces";
+import { ensureDirs } from "./utils/file-utils";
 
 // @ts-expect-error not implemented fully yet
 export class AndroidBrowser extends Browser {
@@ -22,6 +23,7 @@ export class AndroidBrowser extends Browser {
     this.id = randomUUID();
     this.driver = driver;
     this.state = {};
+    ensureDirs();
   }
 
   public getId() {
@@ -104,6 +106,37 @@ export class AndroidBrowser extends Browser {
       };
     } catch (error) {
       throw new Error(`Screenshot failed: ${error}`);
+    }
+  }
+
+  async sleep(
+    ms: number | null
+  ): Promise<BrowserActionResult<BrowserActions.Sleep>> {
+    const DEFAULT_SLEEP_DURATION_MS = 1000;
+    const DEFAULT_SLEEP_MAX_DURATION_MS = 60000;
+
+    let duration = ms ?? DEFAULT_SLEEP_DURATION_MS;
+
+    if (duration > DEFAULT_SLEEP_MAX_DURATION_MS) {
+      console.warn(
+        `Requested sleep duration ${duration}ms exceeds maximum of ${DEFAULT_SLEEP_MAX_DURATION_MS}ms. Using maximum.`
+      );
+      duration = DEFAULT_SLEEP_MAX_DURATION_MS;
+    }
+
+    const seconds = Math.round(duration / 1000);
+    console.log(
+      `⏳ Waiting for ${seconds} second${seconds !== 1 ? "s" : ""}...`
+    );
+
+    try {
+      const driver = this.getDriver();
+      await driver.pause(duration); // Assuming `pause` is available in the mobile driver API
+      return {
+        message: `Slept for ${seconds} second${seconds !== 1 ? "s" : ""}.`,
+      };
+    } catch (error) {
+      throw new Error(`Failed to sleep: ${error}`);
     }
   }
 

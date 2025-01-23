@@ -6,3 +6,4 @@ export * from "./getInstallationCommand";
 export * from "./urlSafe";
 export * from "./retry";
 export * from "./sleep";
+export * from "./exec-async";

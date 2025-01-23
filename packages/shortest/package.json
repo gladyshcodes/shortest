@@ -40,37 +40,39 @@
     "test:email": "tsx tests/test-email.ts"
   },
   "dependencies": {
+    "@shortest/ai": "workspace:*",
+    "@shortest/browser": "workspace:*",
+    "@shortest/cache": "workspace:*",
+    "@shortest/driver": "workspace:*",
+    "@shortest/util": "workspace:*",
+    "appium": "^2.15.0",
+    "appium-uiautomator2-driver": "^3.9.9",
     "chromium-bidi": "^0.5.2",
     "glob": "^10.3.10",
     "otplib": "^12.0.1",
     "picocolors": "^1.0.0",
-    "sharp": "^0.33.5",
-    "@shortest/driver": "workspace:*",
-    "@shortest/ai": "workspace:*",
-    "@shortest/browser": "workspace:*",
-    "@shortest/util": "workspace:*",
-    "@shortest/cache": "workspace:*"
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.24",
+    "package-manager-detector": "0.2.8",
     "tsx": "^4.7.1",
-    "typescript": "~5.6.2",
-    "package-manager-detector": "0.2.8"
+    "typescript": "~5.6.2"
   },
   "engines": {
     "node": ">=18"
   },
   "peerDependencies": {
     "@anthropic-ai/sdk": "0.32.0",
-    "mailosaur": "^8.7.0",
+    "@wdio/logger": "^9.0.0",
+    "@wdio/types": "^8.0.0",
     "dotenv": "^16.4.5",
     "esbuild": "^0.20.1",
     "expect": "^29.7.0",
+    "mailosaur": "^8.7.0",
     "playwright": "^1.48.2",
-    "webdriverio": "^8.0.0",
-    "@wdio/types": "^8.0.0",
-    "@wdio/logger": "^9.0.0"
+    "webdriverio": "^8.0.0"
   },
   "author": "Antiwork",
   "license": "MIT",

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { writeFileSync } from "node:fs";
+import { writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { WebBrowserDriver, WebPage } from "@shortest/driver";
 import { urlSafe } from "@shortest/util";
@@ -12,6 +12,7 @@ import {
   BrowserAutomation,
   BrowserState,
 } from "./interfaces";
+import { ensureDirs } from "./utils/file-utils";
 
 export class WebBrowser extends Browser {
   private id: string;
@@ -23,6 +24,7 @@ export class WebBrowser extends Browser {
     this.id = randomUUID();
     this.driver = driver;
     this.state = {};
+    ensureDirs();
   }
 
   public getId(): string {
