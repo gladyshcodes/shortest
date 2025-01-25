@@ -3,8 +3,9 @@ import {
   Driver,
   CoreDriverConfig,
   CoreDriverForPlatform,
+  DeviceInfo,
 } from "@shortest/driver/src";
-import { merge, retry } from "@shortest/util";
+import { isObjectEmpty, merge, retry } from "@shortest/util";
 import pc from "picocolors";
 import * as wdio from "webdriverio";
 
@@ -16,6 +17,7 @@ export class UIAutomator2Driver extends Driver<CoreDriverForPlatform.Mobile> {
   private coreDriverConfig: CoreDriverConfig.Mobile | null = null;
   private driver: CoreDriverForPlatform.Mobile | null = null;
   private browsers: Map<string, Browser> = new Map();
+  private deviceInfo!: DeviceInfo;
 
   constructor(coreDriverConfig?: CoreDriverConfig.Mobile) {
     super();
@@ -47,6 +49,16 @@ export class UIAutomator2Driver extends Driver<CoreDriverForPlatform.Mobile> {
     };
 
     await retry(connect.bind(this), CONNECT_RETRY_ATTEMPTS);
+
+    // Get device info
+    const viewport = await this.getDriver().getWindowRect();
+    this.deviceInfo = {
+      platform: "android",
+      viewport: {
+        width: viewport.width,
+        height: viewport.height,
+      },
+    };
   }
 
   launch(): Promise<void> {
@@ -77,5 +89,15 @@ export class UIAutomator2Driver extends Driver<CoreDriverForPlatform.Mobile> {
       throw new Error("Driver not initialized.");
     }
     return this.driver;
+  }
+
+  public getDeviceInfo(): DeviceInfo {
+    if (isObjectEmpty(this.deviceInfo)) {
+      throw new Error(
+        "Device information not available. Ensure that init() is called first."
+      );
+    }
+
+    return this.deviceInfo;
   }
 }

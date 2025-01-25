@@ -5,3 +5,4 @@ export * from "./ios-browser";
 export * from "./web-browser";
 export * from "./deprecated_actions";
 export * from "./automations";
+export * from "./utils/image-utils";

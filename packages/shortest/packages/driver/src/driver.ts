@@ -1,5 +1,5 @@
 import { Browser } from "@shortest/browser";
-import { DriverCore } from "./interfaces";
+import { DeviceInfo, DriverCore } from "./interfaces";
 
 export abstract class Driver<T extends DriverCore> {
   /**
@@ -30,4 +30,9 @@ export abstract class Driver<T extends DriverCore> {
    * This method returns the core driver (either Playwright or WebDriver) depending on the platform.
    */
   abstract getDriver(): T;
+
+  /**
+   * Gets the device information.
+   */
+  abstract getDeviceInfo(): DeviceInfo;
 }

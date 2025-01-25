@@ -51,3 +51,11 @@ export type DriverConfig =
 export type WebPage = pw.Page;
 export type WebBrowserDriver = pw.BrowserContext;
 export type MobileBrowserDriver = wdio.Browser;
+
+export type DeviceInfo = {
+  viewport: {
+    width: number;
+    height: number;
+  };
+  platform: PlatformType;
+};

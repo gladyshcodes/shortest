@@ -20,6 +20,7 @@ import {
   keyboardShortcuts,
   MailosaurTool,
   githubAutomation,
+  getAdjustedImageCoords,
 } from "@shortest/browser";
 import {
   ClaudeResponse,
@@ -116,16 +117,13 @@ export class ClaudeAdapter {
   private async handleLeftClick(
     response: ClaudeResponseLeftClick
   ): Promise<BrowserActionResult<BrowserActions.Click>> {
-    let [x, y] = response.coordinate ?? [null, null];
+    const [x, y] = response.coordinate ?? [null, null];
+    if (x === null || y === null) {
+      throw new Error("Cannot perform click: coordinates are missing.");
+    }
 
-    // const DEVICE_PIXEL_RATIO = 2.625;
-    // const AI_X_MULTIPLIER = 0.38;
-    // const AI_Y_MULTIPLIER = 0.37;
-    // if (x && y) {
-    //   x = x * 3.5;
-    //   y = y * 3.5;x`
-    // }
-    return await this.browser.click(Math.round(x!), Math.round(y!));
+    const { x: xOut, y: yOut } = await getAdjustedImageCoords(x, y);
+    return await this.browser.click(xOut, yOut);
   }
 
   private async handleLeftClickDrag(

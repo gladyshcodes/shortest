@@ -11,6 +11,11 @@ import {
   BrowserState,
 } from "./interfaces";
 import { ensureDirs } from "./utils/file-utils";
+import {
+  aspectRatioToDimensionsMap,
+  getClaudeImageRecommendedAspectRatio,
+  resizeToDimention,
+} from "./utils/image-utils";
 
 // @ts-expect-error not implemented fully yet
 export class AndroidBrowser extends Browser {
@@ -84,21 +89,24 @@ export class AndroidBrowser extends Browser {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const outputDir = join(process.cwd(), ".shortest", "screenshots");
     const filePath = join(outputDir, `screenshot-${timestamp}.png`);
+    const deviceViewport = __shortest__.driver!.getDeviceInfo().viewport;
 
     try {
       const screenshot = await this.getDriver().takeScreenshot();
+      const AR = getClaudeImageRecommendedAspectRatio(deviceViewport);
+      const dimentions = aspectRatioToDimensionsMap[AR];
 
-      // Rotate the screenshot and convert it back to a base64 string
-      // const rotatedBuffer = await sharp(Buffer.from(screenshot, "base64"))
-      //   .rotate(90)
-      //   .toBuffer();
+      const screenshotOut = await resizeToDimention(
+        Buffer.from(screenshot, "base64"),
+        dimentions
+      );
 
-      writeFileSync(filePath, Buffer.from(screenshot, "base64"));
+      writeFileSync(filePath, screenshotOut);
 
       return {
         message: `Screenshot taken`,
         payload: {
-          base64Image: screenshot,
+          base64Image: screenshotOut.toString("base64"),
         },
         metadata: {
           browserState: (await this.getState()).payload?.state,

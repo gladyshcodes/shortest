@@ -10,6 +10,7 @@ import {
   Platform,
 } from "./interfaces";
 
+// @ts-expect-error
 export class WebDriver extends Driver<CoreDriverForPlatform[Platform.Web]> {
   private coreDriverConfig: CoreDriverConfig.Web | null = null;
   private driver: CoreDriverForPlatform.Web | null = null;
@@ -93,5 +94,8 @@ export class WebDriver extends Driver<CoreDriverForPlatform[Platform.Web]> {
 }
 
 export const PLAYWRIGHT_CONTEXT_DEFAULT_CONFIG = {
-  viewport: { width: 1920, height: 1080 },
+  viewport: {
+    width: Math.round(1080 / 2.625),
+    height: Math.round(2400 / 2.625),
+  },
 };
