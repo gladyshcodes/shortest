@@ -87,8 +87,6 @@ export class AIClient {
       content: prompt,
     });
 
-    console.log("my platform is", platform);
-
     const adapter = new ClaudeAdapter(browser);
 
     while (true) {
