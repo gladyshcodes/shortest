@@ -1,7 +1,7 @@
 import { mkdirSync, existsSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { build, BuildOptions, Plugin } from "esbuild";
+import { build, BuildOptions } from "esbuild";
 
 export class TestCompiler {
   private cacheDir: string;
@@ -27,24 +27,6 @@ export class TestCompiler {
       "fsevents",
       "node",
     ],
-
-    // todo: consider use this instead of banner
-    // https://github.com/evanw/esbuild/issues/1921#issuecomment-1898197331
-    // inject: [
-    //   resolve("./cjs-shim.ts"),
-    // ],
-    // banner: {
-    //   js: `import { createRequire } from "module";
-
-    //   const require = createRequire(import.meta.url);
-
-    //     import { fileURLToPath } from 'url';
-    //   import { dirname } from 'path';
-    //   const __filename = fileURLToPath(import.meta.url);
-    //   const __dirname = dirname(__filename);
-
-    //   `,
-    // },
   };
 
   constructor() {
@@ -63,46 +45,20 @@ export class TestCompiler {
       imports: {
         shortest: resolve(process.cwd(), "packages/shortest/src/index.ts"),
       },
+
+      // NOTE:
+      // During execution, Appium tries to read package.json (ref: https://github.com/appium/appium/blob/master/packages/appium/lib/utils.js#L19)
+      // Since Shortest tests are built and executed in OS temp dir
+      // The following line is required for Appium to correctly resolve node version
+      // Do not remove this line
+      engines: {
+        node: "^14.17.0 || ^16.13.0 || >=18.0.0",
+      },
     };
     writeFileSync(
       join(this.cacheDir, "package.json"),
       JSON.stringify(packageJson)
     );
-
-    // const loggerPackagePath = resolve(
-    //   process.cwd(),
-    //   "node_modules/.pnpm/@wdio+logger@8.38.0/node_modules/@wdio/logger"
-    // );
-
-    const fixNodeImportPlugin: Plugin = {
-      name: "fix-node-import",
-      setup(build) {
-        build.onResolve({ filter: /^\.\/node\.js$/ }, (args) => {
-          // Ensure the import comes from the correct module
-          console.log("setup");
-          console.log({ args: args.importer });
-          if (
-            args.importer.includes(
-              "node_modules/.pnpm/@wdio+logger@8.38.0/node_modules/@wdio/logger/build/index.js"
-            )
-          ) {
-            console.log("ifstatement");
-            return {
-              path: join(
-                resolve(
-                  process.cwd(),
-                  "node_modules/.pnpm/@wdio+logger@8.38.0/node_modules/@wdio/logger"
-                ),
-                "node.js"
-              ),
-            };
-          }
-
-          // If not the targeted import, do nothing
-          return null;
-        });
-      },
-    };
 
     await build({
       ...this.defaultOptions,
@@ -113,7 +69,7 @@ export class TestCompiler {
         "@shortest": "./packages",
         // "./node.js": join(loggerPackagePath, "node.js"),
       },
-      resolveExtensions: [".ts", ".js", ".mjs"],
+      resolveExtensions: [".ts", ".js", ".mjs", ".json"],
       inject: [
         resolve(
           process.cwd(),
