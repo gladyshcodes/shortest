@@ -1,5 +1,5 @@
 import { Expect } from "expect";
-import { Driver } from "./core/driver/driver";
+import { Driver } from "@shortest/driver";
 import { ShortestConfig, TestFunction } from "./types";
 import pw from "playwright";
 import wdio from "webdriverio";
