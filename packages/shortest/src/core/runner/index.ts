@@ -307,8 +307,6 @@ export class RunnerImpl implements Runner {
       const driver = global.__shortest__.driver!;
       const registry = global.__shortest__.registry!;
 
-      console.log({ driver });
-
       registry.tests.clear();
       registry.currentFileTests = [];
 
