@@ -8,3 +8,4 @@ export * from "./retry";
 export * from "./sleep";
 export * from "./exec-async";
 export * from "./is-object-empty";
+export * from "./get-project-root";
