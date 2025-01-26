@@ -1,0 +1,1 @@
+export const SHORTEST_APPIUM_SERVER_PORT = 7979;

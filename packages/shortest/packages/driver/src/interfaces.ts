@@ -1,6 +1,7 @@
 import { Options } from "@wdio/types";
 import pw from "playwright";
 import * as wdio from "webdriverio";
+import { AppiumServer } from "@appium/types";
 
 export enum Platform {
   Web = "web",
@@ -59,3 +60,5 @@ export type DeviceInfo = {
   };
   platform: PlatformType;
 };
+
+export type MobileServer = AppiumServer;
