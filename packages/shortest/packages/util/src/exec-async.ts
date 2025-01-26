@@ -1,52 +1,42 @@
-import { ChildProcess, spawn, SpawnOptions } from "node:child_process";
+import { exec, ExecOptions } from "node:child_process";
 
-type ExecAsyncOptions = SpawnOptions & {
-  shouldUnref?: boolean;
+type ExecAsyncOptions = ExecOptions & {
+  resolveWhenStdout?: (data: string) => boolean;
+  resolveWhenStderr?: (data: string) => boolean;
 };
 
-export const execAsync = (
+/**
+ * Utility function to execute a command with options and return its output as a promise.
+ *
+ * @param command The command to execute.
+ * @param options The options to customize the execution, such as cwd.
+ * @returns A promise that resolves with the command's output (stdout and stderr).
+ */
+export function execAsync(
   command: string,
-  args: string[] = [],
-  options: ExecAsyncOptions = {}
-): Promise<{ output: string }> => {
+  options: ExecAsyncOptions
+): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const childProcess = spawn(command, args, options);
-    if (options.shouldUnref) {
-      childProcess.unref();
-    }
-
-    let output = "";
-    let errorOutput = "";
-
-    childProcess.stdout?.on("data", (data: Buffer) => {
-      output += data.toString();
-      // TODO remove next line of code
-      const appiumRegex = /(\x1B\[[0-9;]*m)?\[Appium\](.*?)(\x1B\[0m)?/g;
-      if (output.match(appiumRegex)) {
-        console.log("resolving...");
-        resolve({ output });
+    const process = exec(command, options, (error, stdout, stderr) => {
+      if (error) {
+        reject(new Error(`Command failed with error: ${error.message}`));
+        return;
       }
-      console.log(output);
+      resolve({ stdout, stderr });
     });
 
-    childProcess.stderr?.on("data", (data: Buffer) => {
-      errorOutput += data.toString();
-    });
-
-    childProcess.on("close", (code: number) => {
-      if (code === 0) {
-        resolve({ output });
-      } else {
-        reject(
-          new Error(
-            `Command failed with code ${code}: ${errorOutput || output}`
-          )
-        );
+    process.stdout?.on("data", (data) => {
+      if (options.resolveWhenStdout?.(data.toString())) {
+        resolve({ stdout: data.toString(), stderr: "" });
       }
     });
 
-    childProcess.on("error", (err: Error) => {
-      reject(err);
+    process.stderr?.on("data", (data) => {
+      if (options.resolveWhenStderr?.(data.toString())) {
+        resolve({ stdout: "", stderr: data.toString() });
+      }
     });
+
+    return process;
   });
-};
+}
