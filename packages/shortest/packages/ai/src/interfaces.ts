@@ -12,6 +12,8 @@
  * @see https://docs.anthropic.com/en/docs/build-with-claude/computer-use#computer-tool
  */
 
+import { ScrollDirection } from "@shortest/browser";
+
 export interface ClaudeResponseBase {
   action: string;
 }
@@ -91,6 +93,11 @@ export interface ClaudeResponseCallback extends ClaudeResponseBase {
   action: "run_callback";
 }
 
+export interface ClaudeResponseScroll extends ClaudeResponseBase {
+  action: "scroll";
+  direction: ScrollDirection;
+}
+
 export interface ClaudeResponseVerbose extends ClaudeResponseBase {
   action: string;
   [key: string]: any;
@@ -112,4 +119,5 @@ export type ClaudeResponse =
   | ClaudeResponseGithubAutomation
   | ClaudeResponseMailosaurAutomation
   | ClaudeResponseClearSession
-  | ClaudeResponseCallback;
+  | ClaudeResponseCallback
+  | ClaudeResponseScroll;

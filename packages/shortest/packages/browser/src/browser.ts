@@ -8,6 +8,7 @@ import {
   BrowserActionResult,
   BrowserActions,
   BrowserAutomation,
+  ScrollDirection,
 } from "./interfaces";
 
 export abstract class Browser {
@@ -72,6 +73,13 @@ export abstract class Browser {
   abstract sleep(
     ms: number | null
   ): Promise<BrowserActionResult<BrowserActions.Sleep>>;
+
+  /**
+   * Scrolls the browser in the specified direction.
+   */
+  abstract scroll(
+    direction: ScrollDirection
+  ): Promise<BrowserActionResult<BrowserActions.Scroll>>;
 
   /**
    * Executes a pre-defined automation.

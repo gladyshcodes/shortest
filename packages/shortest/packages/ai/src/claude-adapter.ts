@@ -34,6 +34,7 @@ import {
   ClaudeResponseMouseMove,
   ClaudeResponseNavigate,
   ClaudeResponseRightClick,
+  ClaudeResponseScroll,
   ClaudeResponseSleep,
   ClaudeResponseTypeText,
   ClaudeResponseVerbose,
@@ -79,6 +80,8 @@ export class ClaudeAdapter {
         return this.handleClearSession();
       case "run_callback":
         return this.handleRunCallback();
+      case "scroll":
+        return this.handleScroll(response);
       default:
         throw new Error(
           `Unsupported action: ${(response as ClaudeResponseVerbose).action}`
@@ -191,6 +194,12 @@ export class ClaudeAdapter {
     response: ClaudeResponseSleep
   ): Promise<BrowserActionResult<BrowserActions.Sleep>> {
     return await this.browser.sleep(response.duration ?? null);
+  }
+
+  private async handleScroll(
+    response: ClaudeResponseScroll
+  ): Promise<BrowserActionResult<BrowserActions.Scroll>> {
+    return await this.browser.scroll(response.direction);
   }
 
   private async handleGithubAutomation(

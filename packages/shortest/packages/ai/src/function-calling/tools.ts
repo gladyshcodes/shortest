@@ -113,3 +113,24 @@ export const getNavigate = () => ({
     required: ["action", "url"],
   },
 });
+
+export const getScroll = () => ({
+  name: "scroll",
+  description: "Scrolls in specified direction",
+  input_schema: {
+    type: "object",
+    properties: {
+      action: {
+        type: "string",
+        enum: ["scroll"],
+        description: "The action to perform",
+      },
+      direction: {
+        type: "string",
+        enum: ["up", "down"],
+        description: "The direction of scroll",
+      },
+    },
+    required: ["action", "direction"],
+  },
+});

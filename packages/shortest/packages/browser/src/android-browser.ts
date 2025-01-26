@@ -2,13 +2,13 @@ import { randomUUID } from "node:crypto";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { CoreDriverForPlatform } from "@shortest/driver";
-// import sharp from "sharp";
 import { Browser } from "./browser";
 import {
   BrowserActionOptions,
   BrowserActionResult,
   BrowserActions,
   BrowserState,
+  ScrollDirection,
 } from "./interfaces";
 import { ensureDirs } from "./utils/file-utils";
 import {
@@ -35,24 +35,6 @@ export class AndroidBrowser extends Browser {
     return this.id;
   }
 
-  public async navigate(
-    _url: string,
-    _options: BrowserActionOptions.Navigate
-  ): Promise<BrowserActionResult<BrowserActions.Navigate>> {
-    return {
-      message: "Navigated.",
-    };
-  }
-
-  async locateAt(
-    _x: number,
-    _y: number
-  ): Promise<BrowserActionResult<BrowserActions.LocateAt>> {
-    return await Promise.resolve({
-      message: "Not implemented yet",
-    });
-  }
-
   async click(
     x: number | null,
     y: number | null
@@ -67,7 +49,6 @@ export class AndroidBrowser extends Browser {
 
     try {
       await this.getDriver().executeScript("mobile: clickGesture", [{ x, y }]);
-      await this.getDriver().pause(5000);
 
       let metadata;
       try {
@@ -117,6 +98,78 @@ export class AndroidBrowser extends Browser {
     }
   }
 
+  async type(
+    text: string | null
+  ): Promise<BrowserActionResult<BrowserActions.Type>> {
+    if (!text || text.trim() === "") {
+      throw new Error("No text provided to type.");
+    }
+
+    try {
+      await this.getDriver().executeScript("mobile: type", [{ text }]);
+
+      // Optionally, get the current state or metadata after typing
+      let metadata;
+      try {
+        metadata = await this.getState();
+      } catch {
+        // Fallthrough
+      }
+
+      return {
+        message: `Typed text: "${text}"`,
+        metadata,
+      };
+    } catch (error) {
+      throw new Error(`Failed to type: ${error}`);
+    }
+  }
+
+  async scroll(
+    directionIn: ScrollDirection
+  ): Promise<BrowserActionResult<BrowserActions.Scroll>> {
+    let direction;
+
+    // Reverse direction
+    switch (directionIn) {
+      case "up":
+        direction = "down";
+        break;
+      case "down":
+        direction = "up";
+        break;
+      default:
+        throw new Error(`Unknown scroll direction: ${direction}`);
+    }
+
+    try {
+      await this.getDriver().executeScript("mobile: swipeGesture", [
+        {
+          direction,
+          left: 200,
+          top: 200,
+          width: 200,
+          height: 200,
+          percent: 0.75,
+        },
+      ]);
+
+      let metadata;
+      try {
+        metadata = await this.getState();
+      } catch {
+        // Fallthrough
+      }
+
+      return {
+        message: `Scrolled ${direction}.`,
+        metadata,
+      };
+    } catch (error) {
+      throw new Error(`Failed to scroll: ${error}`);
+    }
+  }
+
   async sleep(
     ms: number | null
   ): Promise<BrowserActionResult<BrowserActions.Sleep>> {
@@ -133,13 +186,11 @@ export class AndroidBrowser extends Browser {
     }
 
     const seconds = Math.round(duration / 1000);
-    console.log(
-      `⏳ Waiting for ${seconds} second${seconds !== 1 ? "s" : ""}...`
-    );
+    console.log(`Waiting for ${seconds} second${seconds !== 1 ? "s" : ""}...`);
 
     try {
       const driver = this.getDriver();
-      await driver.pause(duration); // Assuming `pause` is available in the mobile driver API
+      await driver.pause(duration);
       return {
         message: `Slept for ${seconds} second${seconds !== 1 ? "s" : ""}.`,
       };
@@ -151,13 +202,7 @@ export class AndroidBrowser extends Browser {
   public getState(): Promise<BrowserActionResult<BrowserActions.GetState>> {
     return Promise.resolve({
       message: "State received.",
-      payload: {
-        state: {
-          window: {
-            size: { width: 411, height: 889 },
-          },
-        },
-      },
+      payload: undefined, // No state for mobile currently
     });
   }
 
@@ -175,5 +220,29 @@ export class AndroidBrowser extends Browser {
       throw new Error("Driver not initialized.");
     }
     return this.driver;
+  }
+
+  // NOTE This method should never be called on mobile
+  public async navigate(
+    _url: string,
+    _options: BrowserActionOptions.Navigate
+  ): Promise<BrowserActionResult<BrowserActions.Navigate>> {
+    return new Promise((resolve) =>
+      resolve({
+        message: "Navigate action is not supported on mobile",
+      })
+    );
+  }
+
+  // NOTE This method should never be called on mobile
+  async locateAt(
+    _x: number,
+    _y: number
+  ): Promise<BrowserActionResult<BrowserActions.LocateAt>> {
+    return new Promise((resolve) =>
+      resolve({
+        message: "Locale actions is not supported on mobile.",
+      })
+    );
   }
 }

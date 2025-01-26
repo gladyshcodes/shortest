@@ -70,6 +70,7 @@ export namespace BrowserActions {
 
   export interface Cleanup {}
   export interface Callback {}
+  export interface Scroll {}
 }
 
 export interface BrowserActionResult<
@@ -86,7 +87,8 @@ export interface BrowserActionResult<
     | BrowserActions.Sleep
     | BrowserActions.Automation
     | BrowserActions.Cleanup
-    | BrowserActions.Callback,
+    | BrowserActions.Callback
+    | BrowserActions.Scroll,
 > {
   /**
    * One-liner message about the result (will be sent to LLM)
@@ -132,3 +134,5 @@ export interface BrowserAutomation {
     options: Partial<BrowserActionOptions.Automation>
   ): Promise<BrowserAutomationResult>;
 }
+
+export type ScrollDirection = "up" | "down";
